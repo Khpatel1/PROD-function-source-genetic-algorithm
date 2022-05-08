@@ -19,17 +19,19 @@ import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-public class TimetableGA implements HttpFunction {
+public class TimetableGA {
+    // implements HttpFunction {
 
-    public void service(HttpRequest request, HttpResponse response) throws Exception {
-        // public static void main(String[] args) {
+    // public void service(HttpRequest request, HttpResponse response) throws
+    // Exception {
+    public static void main(String[] args) {
 
         // BufferedWriter writer = response.getWriter();
         // Get a Timetable object with all the available information.
         Timetable timetable = initializeTimetable();
 
         // Initialize GA
-        GeneticAlgorithm ga = new GeneticAlgorithm(100, 0.01, 1.1, 2, 5);
+        GeneticAlgorithm ga = new GeneticAlgorithm(500, 0.03, 1.1, 3, 5);
 
         // Initialize population
         Population population = ga.initPopulation(timetable);
@@ -43,6 +45,7 @@ public class TimetableGA implements HttpFunction {
         // Start evolution loop
         while (ga.isTerminationConditionMet(generation, 1000) == false
                 && ga.isTerminationConditionMet(population) == false) {
+            // while (ga.isTerminationConditionMet(population) == false) {
             // Print fitness
             // writer.write("G" + generation + " Best fitness: " +
             // population.getFittest(0).getFitness() + "\n");
@@ -153,6 +156,12 @@ public class TimetableGA implements HttpFunction {
         // Set up rooms
         timetable.addRoom(1, "A1", 100);
         timetable.addRoom(2, "B1", 100);
+        timetable.addRoom(3, "c1", 100);
+        timetable.addRoom(4, "d1", 100);
+        timetable.addRoom(5, "e1", 100);
+        timetable.addRoom(6, "f1", 100);
+        timetable.addRoom(7, "g1", 100);
+        timetable.addRoom(8, "h1", 100);
 
         // Set up timeslots
         Timeslot[] ts = new Timeslot[16];
@@ -220,7 +229,11 @@ public class TimetableGA implements HttpFunction {
         }
 
         // Set up student groups and the modules they take.
-        timetable.addGroup(1, 10, timetable.getModuleIds());
+        // timetable.addGroup(1, 10, timetable.getModuleIds());
+        timetable.addGroup(1, 1, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
+        timetable.addGroup(2, 2, new int[] { 2, 5, 8, 12, 13, 15, 17, 19 });
+        timetable.addGroup(3, 1, new int[] { 2, 19 });
+
         return timetable;
     }
 
