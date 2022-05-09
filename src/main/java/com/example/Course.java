@@ -15,14 +15,13 @@ public class Course {
         this.courseTitle = courseTitle;
         this.disciplines = disciplines;
     }
-    
+
     public Course(int javaId, String courseNumber, String courseTitle, String[] disciplines) {
         this.javaId = javaId;
         this.courseNumber = courseNumber;
         this.courseTitle = courseTitle;
         this.disciplines = disciplines;
     }
-
 
     public ObjectId get_id() {
         return _id;

@@ -352,6 +352,38 @@ public class Timetable {
 			profCounts.put(profs[i].getProfessorId(), 0);
 		}
 
+		// check if other class with same class id is at the same time
+		for (Class classA : this.classes) {
+			int classAID = classA.getClassId();
+			int classATS = classA.getTimeslotId();
+			int classAMID = classA.getModuleId();
+			for (Class classB : classes) {
+				int classBID = classB.getClassId();
+				int classBTS = classB.getTimeslotId();
+				int classBMID = classB.getModuleId();
+
+				// check if class a and b are the same
+				if (classAID != classBID) {
+					// check if both are ref. to same course
+					if (classAMID == classBMID) {
+						// if both ref same course check the timeslots
+						if (classATS == classBTS) {
+							/*
+							 * System.out.println(
+							 * String.format("ClassAID: %d MID: %d TS: %d, ClassBID: %d MID: %d TS: %d",
+							 * classAID,
+							 * classAMID, classATS, classBID, classBMID, classBTS));
+							 */
+							// if both course and timeslot is same
+							clashes++;
+						}
+					}
+				}
+
+			}
+
+		}
+
 		// Checking for overlaps in the classes.
 		for (Class classA : this.classes) {
 			// get current prof assigned to check for overlaps
@@ -409,7 +441,7 @@ public class Timetable {
 			// System.out.println(String.format("%s, max: %d, assigned: %d",
 			// profs[i].getProfessorName(), maxLimit, currentAssigned )) ;
 			if (currentAssigned > maxLimit) {
-				clashes = clashes + 2;
+				clashes++;
 			}
 
 			else if (currentAssigned == 0) {

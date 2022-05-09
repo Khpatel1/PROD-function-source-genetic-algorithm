@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 
 import java.io.BufferedWriter;
 import java.io.PrintWriter;
+import java.io.StreamCorruptedException;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -31,7 +32,7 @@ public class TimetableGA {
         Timetable timetable = initializeTimetable();
 
         // Initialize GA
-        GeneticAlgorithm ga = new GeneticAlgorithm(500, 0.03, 1.1, 3, 5);
+        GeneticAlgorithm ga = new GeneticAlgorithm(400, 0.02, 1.1, 3, 5);
 
         // Initialize population
         Population population = ga.initPopulation(timetable);
@@ -87,9 +88,11 @@ public class TimetableGA {
                     timetable.getProfessor(classes[i].getProfessorId()).getProfessorName(),
                     timetable.getTimeslot(classes[i].getTimeslotId()).getTimeslot());
 
-            String json = gson.toJson(s1);
-            Document doc = Document.parse(json);
-            DBconnection.db_schedule.insertOne(doc);
+            /*
+             * String json = gson.toJson(s1);
+             * Document doc = Document.parse(json);
+             * DBconnection.db_schedule.insertOne(doc);
+             */
 
             classIndex++;
         }
@@ -105,6 +108,40 @@ public class TimetableGA {
 
         }
 
+        // go through classes and create scheduleclasses, if schedule classes exist then
+        // update it given the course number
+        // Hashmap hm <CRN, ScheduleClasses>
+        // if key= crn DNE in hm:: hm.put(k = class.crn, v = new
+        // SchedulesClass(classIdx, CRN{ModuleCode}, courseTitle, new String[]
+        // {class.getProfessorName}, new String[] {class.getTimeslot}) )
+        // else { get the scheduledClass sc, then
+        // sc.addInstructorAndTimeslot({class.getProfessorName}, {class.getTimeslot})},
+        // then update map at key crn
+        int clsidx = 1;
+        HashMap<String, ScheduledClasses> schm = new HashMap<String, ScheduledClasses>();
+        for (Class cls : classes) {
+            String crn = timetable.getModule(cls.getModuleId()).getModuleCode();
+            // System.out.println(crn);
+            if (!(schm.containsKey(crn))) {
+                schm.put(crn,
+                        new ScheduledClasses(clsidx, crn, timetable.getModule(cls.getModuleId()).getModuleName(),
+                                new String[] { timetable.getProfessor(cls.getProfessorId()).getProfessorName() },
+                                new String[] { timetable.getTimeslot(cls.getTimeslotId()).getTimeslot() }));
+                clsidx++;
+            } else {
+                ScheduledClasses sc = schm.get(crn);
+                sc.addInstructorAndTime(timetable.getProfessor(cls.getProfessorId()).getProfessorName(),
+                        timetable.getTimeslot(cls.getTimeslotId()).getTimeslot());
+                schm.put(crn, sc);
+            }
+        }
+
+        for (ScheduledClasses scs : schm.values()) {
+            String json = gson.toJson(scs);
+            Document doc = Document.parse(json);
+            DBconnection.db_schedule.insertOne(doc);
+            scs.print();
+        }
         Rstatus nStatus = new Rstatus(1, "success");
 
     }
