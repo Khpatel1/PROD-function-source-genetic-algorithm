@@ -13,6 +13,7 @@ public class Module {
     private final String moduleCode;
     private final String module;
     private final int professorIds[];
+    private int sections;
 
     /**
      * Initialize new Module
@@ -22,11 +23,16 @@ public class Module {
      * @param module
      * @param professorIds
      */
-    public Module(int moduleId, String moduleCode, String module, int professorIds[]) {
+    public Module(int moduleId, String moduleCode, String module, int professorIds[], int sections) {
         this.moduleId = moduleId;
         this.moduleCode = moduleCode;
         this.module = module;
         this.professorIds = professorIds;
+        this.sections = sections;
+    }
+
+    public int getSections() {
+        return sections;
     }
 
     /**

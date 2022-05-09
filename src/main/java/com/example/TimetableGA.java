@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import java.io.BufferedWriter;
 import java.io.PrintWriter;
 import java.io.StreamCorruptedException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -19,6 +20,8 @@ import com.mongodb.client.result.UpdateResult;
 
 import org.bson.Document;
 import org.bson.conversions.Bson;
+
+import ch.qos.logback.core.CoreConstants;
 
 public class TimetableGA {
     // implements HttpFunction {
@@ -44,7 +47,7 @@ public class TimetableGA {
         int generation = 1;
 
         // Start evolution loop
-        while (ga.isTerminationConditionMet(generation, 1000) == false
+        while (ga.isTerminationConditionMet(generation, 1200) == false
                 && ga.isTerminationConditionMet(population) == false) {
             // while (ga.isTerminationConditionMet(population) == false) {
             // Print fitness
@@ -200,6 +203,15 @@ public class TimetableGA {
         timetable.addRoom(7, "g1", 100);
         timetable.addRoom(8, "h1", 100);
 
+        // get sections based in max sections for classes
+        // get max sections
+        int maxSections = 0;
+        for (Course course : pCourses) {
+            if (course.getSections() > maxSections) {
+                maxSections = course.getSections();
+            }
+        }
+
         // Set up timeslots
         Timeslot[] ts = new Timeslot[16];
         ts[0] = new Timeslot(1, "T,TR: 9:25 - 10:40", null, new int[] { 925, 1040 }, null, new int[] { 925, 1040 },
@@ -257,7 +269,7 @@ public class TimetableGA {
         Module[] modules = new Module[numCourses];
         for (int i = 0; i < numCourses; i++) {
             modules[i] = new Module(i + 1, pCourses[i].courseNumber, pCourses[i].courseTitle,
-                    findOverlap(pCourses[i], pInstructors));
+                    findOverlap(pCourses[i], pInstructors), pCourses[i].getSections());
             timetable.addModule(modules[i]);
             // modules[i].print();
             // //writer.write(String.format("TIMETABLE:: id: %d, crn: %s, title: %s,\t\t
@@ -265,11 +277,32 @@ public class TimetableGA {
             // pCourses[i].dString()));
         }
 
+        for (int j = 1; j <= maxSections; j++) {
+            ArrayList<Integer> list = new ArrayList<Integer>();
+            for (Module m : modules) {
+                if (m.getSections() >= j) {
+                    list.add(m.getModuleId());
+                }
+            }
+
+            int[] arr = list.stream().filter(i -> i != null).mapToInt(i -> i).toArray();
+            String str = "";
+            for (int k = 0; k < arr.length; k++) {
+                str += String.format("%d ", arr[k]);
+            }
+            System.out.println(str);
+            timetable.addGroup(j, 1, arr);
+        }
+
         // Set up student groups and the modules they take.
         // timetable.addGroup(1, 10, timetable.getModuleIds());
-        timetable.addGroup(1, 1, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 });
-        timetable.addGroup(2, 2, new int[] { 2, 5, 8, 12, 13, 15, 17, 19 });
-        timetable.addGroup(3, 1, new int[] { 2, 19 });
+
+        /*
+         * timetable.addGroup(1, 1, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+         * 13, 14, 15, 16, 17, 18, 19, 20 });
+         * timetable.addGroup(2, 2, new int[] { 2, 5, 8, 12, 13, 15, 17, 19 });
+         * timetable.addGroup(3, 1, new int[] { 2, 19 });
+         */
 
         return timetable;
     }
@@ -317,20 +350,10 @@ public class TimetableGA {
                                         || (ts1Start <= ts2Start && ts2Start < ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "monday case 1";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 } else if ((ts2Start < ts1End && ts1End <= ts2End)
                                         || (ts1Start < ts2End && ts2End <= ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "monday case 2";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 }
                             }
                         }
@@ -353,20 +376,10 @@ public class TimetableGA {
                                         || (ts1Start <= ts2Start && ts2Start < ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "tuesday case 1";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 } else if ((ts2Start < ts1End && ts1End <= ts2End)
                                         || (ts1Start < ts2End && ts2End <= ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "tuesday case 2";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 }
                             }
                         }
@@ -390,20 +403,10 @@ public class TimetableGA {
                                         || (ts1Start <= ts2Start && ts2Start < ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "wednesday case 1";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 } else if ((ts2Start < ts1End && ts1End <= ts2End)
                                         || (ts1Start < ts2End && ts2End <= ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "wednesday case 2";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 }
                             }
                         }
@@ -426,20 +429,10 @@ public class TimetableGA {
                                         || (ts1Start <= ts2Start && ts2Start < ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "Thursday case 1";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 } else if ((ts2Start < ts1End && ts1End <= ts2End)
                                         || (ts1Start < ts2End && ts2End <= ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "Thursday case 2";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 }
                             }
                         }
@@ -462,20 +455,10 @@ public class TimetableGA {
                                         || (ts1Start <= ts2Start && ts2Start < ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "friday case 1";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 } else if ((ts2Start < ts1End && ts1End <= ts2End)
                                         || (ts1Start < ts2End && ts2End <= ts1End)) {
                                     ts1.addAvoid(ts2.getTimeslotId());
                                     st += "friday case 2";
-                                    System.out.println(String.format(
-                                            "id1: %d. ts1S: %d, ts1E: %d, id2: %d, ts2S: %d, ts2E: %d %s",
-                                            ts1.getTimeslotId(), ts1Start, ts1End, ts2.getTimeslotId(), ts2Start,
-                                            ts2End,
-                                            st));
                                 }
                             }
                         }

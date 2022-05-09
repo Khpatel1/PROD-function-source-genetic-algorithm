@@ -8,12 +8,14 @@ public class Course {
     String courseNumber;
     String courseTitle;
     String[] disciplines;
+    int sections;
 
-    public Course(ObjectId _id, String courseNumber, String courseTitle, String[] disciplines) {
+    public Course(ObjectId _id, String courseNumber, String courseTitle, String[] disciplines, int sections) {
         this._id = _id;
         this.courseNumber = courseNumber;
         this.courseTitle = courseTitle;
         this.disciplines = disciplines;
+        this.sections = sections;
     }
 
     public Course(int javaId, String courseNumber, String courseTitle, String[] disciplines) {
@@ -21,6 +23,10 @@ public class Course {
         this.courseNumber = courseNumber;
         this.courseTitle = courseTitle;
         this.disciplines = disciplines;
+    }
+
+    public int getSections() {
+        return sections;
     }
 
     public ObjectId get_id() {
