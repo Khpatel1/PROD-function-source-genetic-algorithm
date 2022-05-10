@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import java.io.BufferedWriter;
 import java.io.PrintWriter;
 import java.io.StreamCorruptedException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,12 +24,10 @@ import org.bson.conversions.Bson;
 
 import ch.qos.logback.core.CoreConstants;
 
-public class TimetableGA {
-    // implements HttpFunction {
+public class TimetableGA implements HttpFunction {
 
-    // public void service(HttpRequest request, HttpResponse response) throws
-    // Exception {
-    public static void main(String[] args) {
+    public void service(HttpRequest request, HttpResponse response) throws Exception {
+        // public static void main(String[] args) {
 
         // BufferedWriter writer = response.getWriter();
         // Get a Timetable object with all the available information.
@@ -53,7 +52,8 @@ public class TimetableGA {
             // Print fitness
             // writer.write("G" + generation + " Best fitness: " +
             // population.getFittest(0).getFitness() + "\n");
-            System.out.println("G" + generation + " Best fitness: " + population.getFittest(0).getFitness() + "\n");
+            // System.out.println("G" + generation + " Best fitness: " +
+            // population.getFittest(0).getFitness());
 
             // Apply crossover
             population = ga.crossoverPopulation(population);
@@ -70,11 +70,13 @@ public class TimetableGA {
 
         // Print fitness
         timetable.createClasses(population.getFittest(0));
-        System.out.println("\n");
-        System.out.println("Solution found in " + generation + " generations");
-        System.out.println("Final solution fitness: " + population.getFittest(0).getFitness());
-        System.out.println("Clashes: " + timetable.calcClashes(timetable));
-
+        /*
+         * System.out.println("\n");
+         * System.out.println("Solution found in " + generation + " generations");
+         * System.out.println("Final solution fitness: " +
+         * population.getFittest(0).getFitness());
+         * System.out.println("Clashes: " + timetable.calcClashes(timetable));
+         */
         DBconnection.db_schedule.deleteMany(new Document());
         Gson gson = new Gson();
         // Print classes
@@ -161,6 +163,7 @@ public class TimetableGA {
         Gson gson = new Gson();
 
         // convert all instructors in database to java objects
+        int maxProfTeachable = 0;
         FindIterable<Document> fItr1 = DBconnection.db_instructors.find();
         MongoCursor<Document> instructorCursor = fItr1.iterator();
         int numInstructors = (int) DBconnection.db_instructors.countDocuments();
@@ -172,6 +175,7 @@ public class TimetableGA {
             pInstructors[i].setJavaId(i + 1);
             pInstructors[i].setAssigned(0);
             // pInstructors[i].print();
+            maxProfTeachable += pInstructors[i].getMaxClasses();
         }
         instructorCursor.close();
 
@@ -206,43 +210,53 @@ public class TimetableGA {
         // get sections based in max sections for classes
         // get max sections
         int maxSections = 0;
+        int sumSections = 0;
         for (Course course : pCourses) {
             if (course.getSections() > maxSections) {
                 maxSections = course.getSections();
             }
+            sumSections += course.getSections();
+        }
+
+        DBconnection.db_errors.deleteMany(new Document());
+        if (sumSections > maxProfTeachable) {
+            String json = gson.toJson(new Collision(String.format(
+                    "%d sections are added through courses, %d is the instructor max", sumSections, maxProfTeachable)));
+            Document doc = Document.parse(json);
+            DBconnection.db_errors.insertOne(doc);
         }
 
         // Set up timeslots
         Timeslot[] ts = new Timeslot[16];
-        ts[0] = new Timeslot(1, "T,TR: 9:25 - 10:40", null, new int[] { 925, 1040 }, null, new int[] { 925, 1040 },
+        ts[0] = new Timeslot(1, "T TR: 9:25 - 10:40", null, new int[] { 925, 1040 }, null, new int[] { 925, 1040 },
                 null);
-        ts[1] = new Timeslot(2, "M,W: 12:15 - 13:30", new int[] { 925, 1040 }, null, new int[] { 925, 1040 }, null,
+        ts[1] = new Timeslot(2, "M W: 12:15 - 13:30", new int[] { 925, 1040 }, null, new int[] { 925, 1040 }, null,
                 null);
-        ts[2] = new Timeslot(3, "T,Th: 17:55 - 19:10", null, new int[] { 1755, 1910 }, null, new int[] { 1755, 1910 },
+        ts[2] = new Timeslot(3, "T TR: 17:55 - 19:10", null, new int[] { 1755, 1910 }, null, new int[] { 1755, 1910 },
                 null);
-        ts[3] = new Timeslot(4, "M,W,F: 9:25 - 10:15", new int[] { 925, 1015 }, null, new int[] { 925, 1015 }, null,
+        ts[3] = new Timeslot(4, "M W F: 9:25 - 10:15", new int[] { 925, 1015 }, null, new int[] { 925, 1015 }, null,
                 new int[] { 925, 1015 });
-        ts[4] = new Timeslot(5, "M,F,W: 12:15 - 13:05", new int[] { 1215, 1305 }, null, new int[] { 1215, 1305 }, null,
+        ts[4] = new Timeslot(5, "M W F: 12:15 - 13:05", new int[] { 1215, 1305 }, null, new int[] { 1215, 1305 }, null,
                 new int[] { 1215, 1305 });
-        ts[5] = new Timeslot(6, "T,TR: 8:00 - 9:15", null, new int[] { 800, 915 }, null, new int[] { 900, 915 }, null);
-        ts[6] = new Timeslot(7, "M,W: 8:00 - 9:15", new int[] { 800, 915 }, null, new int[] { 800, 915 }, null, null);
-        ts[7] = new Timeslot(8, "M,W: 9:25 - 10:40", new int[] { 925, 1040 }, null, new int[] { 925, 1040 }, null,
+        ts[5] = new Timeslot(6, "T TR: 8:00 - 9:15", null, new int[] { 800, 915 }, null, new int[] { 900, 915 }, null);
+        ts[6] = new Timeslot(7, "M W: 8:00 - 9:15", new int[] { 800, 915 }, null, new int[] { 800, 915 }, null, null);
+        ts[7] = new Timeslot(8, "M W: 9:25 - 10:40", new int[] { 925, 1040 }, null, new int[] { 925, 1040 }, null,
                 null);
-        ts[8] = new Timeslot(9, "T, TR: 12:15 - 13:30", null, new int[] { 1215, 1330 }, null, new int[] { 1215, 1330 },
+        ts[8] = new Timeslot(9, "T TR: 12:15 - 13:30", null, new int[] { 1215, 1330 }, null, new int[] { 1215, 1330 },
                 null);
-        ts[9] = new Timeslot(10, "M,W: 10:50 - 11:55", new int[] { 1050, 1155 }, null, new int[] { 1050, 1155 }, null,
+        ts[9] = new Timeslot(10, "M W: 10:50 - 11:55", new int[] { 1050, 1155 }, null, new int[] { 1050, 1155 }, null,
                 null);
-        ts[10] = new Timeslot(11, "T,TR: 10:50 - 11:55", null, new int[] { 1050, 1155 }, null, new int[] { 1050, 1155 },
+        ts[10] = new Timeslot(11, "T TR: 10:50 - 11:55", null, new int[] { 1050, 1155 }, null, new int[] { 1050, 1155 },
                 null);
-        ts[11] = new Timeslot(12, "T,TR: 10:55 - 11:55", null, new int[] { 1055, 1155 }, null, new int[] { 1055, 1155 },
+        ts[11] = new Timeslot(12, "T TR: 10:55 - 11:55", null, new int[] { 1055, 1155 }, null, new int[] { 1055, 1155 },
                 null);
-        ts[12] = new Timeslot(13, "M,W,F: 10:50 - 11:40", new int[] { 1050, 1140 }, null, new int[] { 1050, 1140 },
+        ts[12] = new Timeslot(13, "M W F: 10:50 - 11:40", new int[] { 1050, 1140 }, null, new int[] { 1050, 1140 },
                 null, new int[] { 1050, 1140 });
-        ts[13] = new Timeslot(14, "M,W: 10:55 - 11:55", new int[] { 1055, 1155 }, null, new int[] { 1055, 1155 }, null,
+        ts[13] = new Timeslot(14, "M W: 10:55 - 11:55", new int[] { 1055, 1155 }, null, new int[] { 1055, 1155 }, null,
                 null);
-        ts[14] = new Timeslot(15, "M,W,F: 8:00 - 8:50", new int[] { 800, 850 }, null, new int[] { 800, 850 }, null,
+        ts[14] = new Timeslot(15, "M W F: 8:00 - 8:50", new int[] { 800, 850 }, null, new int[] { 800, 850 }, null,
                 new int[] { 800, 850 });
-        ts[15] = new Timeslot(16, "M,W,F: 16:30 - 17:20", new int[] { 1630, 1720 }, null, new int[] { 1630, 1720 },
+        ts[15] = new Timeslot(16, "M W F: 16:30 - 17:20", new int[] { 1630, 1720 }, null, new int[] { 1630, 1720 },
                 null,
                 new int[] { 1630, 1720 });
 
@@ -252,7 +266,7 @@ public class TimetableGA {
         DBconnection.db_timeslots.deleteMany(new Document());
         // set up timeslots
         for (Timeslot ts1 : ts) {
-            System.out.print(ts1.getTimeslotId() + "  " + ts1.getTimeslot() + "   ");
+            // System.out.print(ts1.getTimeslotId() + " " + ts1.getTimeslot() + " ");
             ts1.printAvoid();
             String json = gson.toJson(ts1);
             Document doc = Document.parse(json);
@@ -271,10 +285,6 @@ public class TimetableGA {
             modules[i] = new Module(i + 1, pCourses[i].courseNumber, pCourses[i].courseTitle,
                     findOverlap(pCourses[i], pInstructors), pCourses[i].getSections());
             timetable.addModule(modules[i]);
-            // modules[i].print();
-            // //writer.write(String.format("TIMETABLE:: id: %d, crn: %s, title: %s,\t\t
-            // dis: %s \n", i+1, pCourses[i].courseNumber, pCourses[i].getCourseTitle(),
-            // pCourses[i].dString()));
         }
 
         for (int j = 1; j <= maxSections; j++) {
@@ -290,19 +300,13 @@ public class TimetableGA {
             for (int k = 0; k < arr.length; k++) {
                 str += String.format("%d ", arr[k]);
             }
-            System.out.println(str);
+            // System.out.println(str);
+            if (j == maxSections && sumSections > maxProfTeachable) {
+                int diff = sumSections - maxProfTeachable;
+                arr = Arrays.copyOf(arr, arr.length - diff);
+            }
             timetable.addGroup(j, 1, arr);
         }
-
-        // Set up student groups and the modules they take.
-        // timetable.addGroup(1, 10, timetable.getModuleIds());
-
-        /*
-         * timetable.addGroup(1, 1, new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-         * 13, 14, 15, 16, 17, 18, 19, 20 });
-         * timetable.addGroup(2, 2, new int[] { 2, 5, 8, 12, 13, 15, 17, 19 });
-         * timetable.addGroup(3, 1, new int[] { 2, 19 });
-         */
 
         return timetable;
     }

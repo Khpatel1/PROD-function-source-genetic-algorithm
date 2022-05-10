@@ -1,6 +1,5 @@
 package com.example;
 
-
 public class GeneticAlgorithm {
 
 	private int populationSize;
@@ -23,7 +22,7 @@ public class GeneticAlgorithm {
 	 * Initialize population
 	 * 
 	 * @param chromosomeLength
-	 *            The length of the individuals chromosome
+	 *                         The length of the individuals chromosome
 	 * @return population The initial population generated
 	 */
 	public Population initPopulation(Timetable timetable) {
@@ -36,9 +35,9 @@ public class GeneticAlgorithm {
 	 * Check if population has met termination condition
 	 * 
 	 * @param generationsCount
-	 *            Number of generations passed
+	 *                         Number of generations passed
 	 * @param maxGenerations
-	 *            Number of generations to terminate after
+	 *                         Number of generations to terminate after
 	 * @return boolean True if termination condition met, otherwise, false
 	 */
 	public boolean isTerminationConditionMet(int generationsCount, int maxGenerations) {
@@ -119,14 +118,7 @@ public class GeneticAlgorithm {
 		return tournament.getFittest(0);
 	}
 
-
-	/**
-     * Apply mutation to population
-     * 
-     * @param population
-     * @param timetable
-     * @return The mutated population
-     */
+	// Mutating the population.
 	public Population mutatePopulation(Population population, Timetable timetable) {
 		// Initialize new population
 		Population newPopulation = new Population(this.populationSize);
@@ -158,12 +150,12 @@ public class GeneticAlgorithm {
 		return newPopulation;
 	}
 
-    /**
-     * Apply crossover to population
-     * 
-     * @param population The population to apply crossover to
-     * @return The new population
-     */
+	/**
+	 * Apply crossover to population
+	 * 
+	 * @param population The population to apply crossover to
+	 * @return The new population
+	 */
 	public Population crossoverPopulation(Population population) {
 		// Create new population
 		Population newPopulation = new Population(population.size());
@@ -176,7 +168,7 @@ public class GeneticAlgorithm {
 			if (this.crossoverRate > Math.random() && populationIndex >= this.elitismCount) {
 				// Initialize offspring
 				Individual offspring = new Individual(parent1.getChromosomeLength());
-				
+
 				// Find second parent
 				Individual parent2 = selectParent(population);
 
@@ -200,7 +192,5 @@ public class GeneticAlgorithm {
 
 		return newPopulation;
 	}
-
-
 
 }
